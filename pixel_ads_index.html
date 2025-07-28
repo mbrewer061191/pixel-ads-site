@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Advertisement – $1 per Pixel</title>
+  <style>
+    /* Basic styling for the page */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      color: #222;
+      text-align: center;
+    }
+
+    header {
+      background: #0066cc;
+      color: #fff;
+      padding: 2rem 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    header p {
+      margin: 0.5rem 0 0;
+      font-size: 1rem;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    #canvasContainer {
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      background: #fff;
+      width: 1000px;
+      height: 1000px;
+    }
+
+    #pixelCanvas {
+      display: block;
+    }
+
+    #selectionInfo {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    form {
+      margin-top: 2rem;
+      background: #fff;
+      padding: 1.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    form h2 {
+      margin-top: 0;
+    }
+
+    form input, form textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    form button {
+      padding: 0.7rem 1.5rem;
+      background: #0066cc;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    form button:hover {
+      background: #004d99;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pixel Advertisement Space</h1>
+    <p>One dollar per pixel – advertise on our 1,000,000‑pixel grid</p>
+  </header>
+
+  <main>
+    <p>Welcome! Each pixel on the grid below is available for just $1. Due to the tiny size of a single pixel, purchases are made in blocks of 10 × 10 pixels (100 pixels) for $100. You can buy multiple blocks to create larger advertisements. Click on the grid to select the blocks you wish to purchase. Your selected blocks will be highlighted. When you’re ready, fill out the form below to contact us about your selection.</p>
+
+    <div id="canvasContainer">
+      <canvas id="pixelCanvas" width="1000" height="1000"></canvas>
+    </div>
+    <div id="selectionInfo">No blocks selected.</div>
+
+    <!--
+      This form uses the FormSubmit service (https://formsubmit.co/) to send form
+      submissions directly to the site owner via email. When the form is
+      submitted, FormSubmit will send the form fields to the specified email
+      address (mbrewer061191@gmail.com) without requiring any server‑side
+      configuration. The hidden inputs disable captcha and set a custom
+      subject line for the email.  If you prefer to use another form
+      service, update the action URL accordingly.
+    -->
+    <form id="contactForm" action="https://formsubmit.co/mbrewer061191@gmail.com" method="POST">
+      <h2>Contact Us to Purchase</h2>
+      <p>Please provide your name, email and a brief message describing your advertisement. We’ll follow up with payment instructions and help you upload your image and link.</p>
+      <input type="text" name="name" placeholder="Your Name" required>
+      <input type="email" name="email" placeholder="Your Email" required>
+      <textarea name="message" placeholder="Describe your advertisement and the blocks you wish to purchase" rows="5" required></textarea>
+      <!-- Hidden fields for FormSubmit: disable captcha and set subject -->
+      <input type="hidden" name="_subject" value="New pixel ad request from pixel‑ads site">
+      <input type="hidden" name="_captcha" value="false">
+      <!-- Include the number of selected blocks/pixels as hidden inputs so the email contains purchase details -->
+      <input type="hidden" name="blocksSelected" id="blocksSelected" value="">
+      <input type="hidden" name="pixelsSelected" id="pixelsSelected" value="">
+      <button type="submit">Submit Request</button>
+    </form>
+  </main>
+
+  <script>
+    // Configuration
+    const canvas = document.getElementById('pixelCanvas');
+    const ctx = canvas.getContext('2d');
+    const blockSize = 10; // Each block is 10×10 pixels (100 pixels)
+    const blocksPerRow = canvas.width / blockSize;
+    const blocksPerCol = canvas.height / blockSize;
+    const selectedBlocks = new Set();
+
+    // Draw the grid
+    function drawGrid() {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 0.5;
+      // Draw vertical lines
+      for (let x = 0; x <= canvas.width; x += blockSize) {
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, canvas.height);
+        ctx.stroke();
+      }
+      // Draw horizontal lines
+      for (let y = 0; y <= canvas.height; y += blockSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(canvas.width, y + 0.5);
+        ctx.stroke();
+      }
+      drawSelectedBlocks();
+    }
+
+    // Draw selected blocks
+    function drawSelectedBlocks() {
+      selectedBlocks.forEach(blockKey => {
+        const [bx, by] = blockKey.split(',').map(Number);
+        const x = bx * blockSize;
+        const y = by * blockSize;
+        ctx.fillStyle = '#ffeb3b'; // yellow highlight
+        ctx.fillRect(x, y, blockSize, blockSize);
+        ctx.strokeStyle = '#cccc00';
+        ctx.strokeRect(x + 0.5, y + 0.5, blockSize - 1, blockSize - 1);
+      });
+    }
+
+    // Update selection info text
+    function updateSelectionInfo() {
+      const blocksCount = selectedBlocks.size;
+      const pixelsCount = blocksCount * blockSize * blockSize;
+      const totalPrice = pixelsCount; // $1 per pixel
+      const info = blocksCount === 0
+        ? 'No blocks selected.'
+        : `${blocksCount} block${blocksCount > 1 ? 's' : ''} selected: ${pixelsCount} pixel${pixelsCount > 1 ? 's' : ''} • Total price: $${totalPrice}`;
+      document.getElementById('selectionInfo').innerText = info;
+    }
+
+    // Handle canvas click
+    // Utility to select a block at the given canvas coordinates. When dragging
+    // we only add blocks (no toggling) for a smoother experience. When not
+    // dragging, clicking toggles selection.
+    function selectBlockAt(x, y, toggle = false) {
+      const blockX = Math.floor(x / blockSize);
+      const blockY = Math.floor(y / blockSize);
+      const key = `${blockX},${blockY}`;
+      if (toggle) {
+        if (selectedBlocks.has(key)) {
+          selectedBlocks.delete(key);
+        } else {
+          selectedBlocks.add(key);
+        }
+      } else {
+        // Add block if not already selected
+        if (!selectedBlocks.has(key)) {
+          selectedBlocks.add(key);
+        }
+      }
+      drawGrid();
+      updateSelectionInfo();
+    }
+
+    // Handle single click (toggle selection)
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      selectBlockAt(x, y, true);
+    });
+
+    // Drag selection support
+    let isDragging = false;
+    function onMouseDown(event) {
+      isDragging = true;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      selectBlockAt(x, y, false);
+      event.preventDefault();
+    }
+    function onMouseMove(event) {
+      if (!isDragging) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      selectBlockAt(x, y, false);
+    }
+    function onMouseUp() {
+      isDragging = false;
+    }
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('mouseleave', onMouseUp);
+
+    // Initial draw
+    drawGrid();
+    updateSelectionInfo();
+
+    // Update hidden form fields before submission so that the email contains
+    // information about selected blocks/pixels. No custom JavaScript is required
+    // to send emails because the FormSubmit service handles the POST request.
+    document.getElementById('contactForm').addEventListener('submit', function() {
+      const blocksCount = selectedBlocks.size;
+      const pixelsCount = blocksCount * blockSize * blockSize;
+      document.getElementById('blocksSelected').value = blocksCount;
+      document.getElementById('pixelsSelected').value = pixelsCount;
+    });
+  </script>
+</body>
+</html>
